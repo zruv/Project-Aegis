@@ -1,0 +1,32 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# --- PlatformIO (Firmware Build) ---
+firmware/.pio/
+.pio/
+build/
+
+# --- VS Code ---
+.vscode/
+*.code-workspace
+
+# --- OS System Files ---
+.DS_Store
+Thumbs.db
+
+# --- Project Aegis Specific ---
+# Ignore the actual database so we don't commit real user data
+*.db
+host/aegis_data/
+
+# --- Security (CRITICAL) ---
+# Never commit secrets!
+firmware/src/secrets.h
+
+# --- Docker ---
+# If you have local overrides
+docker-compose.override.yml

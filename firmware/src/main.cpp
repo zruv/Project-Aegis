@@ -46,6 +46,7 @@ void loop(){
       digitalWrite(STATUS_LED_PIN, HIGH);
       String signature = calculateHMAC(challenge);
       Serial.println(signature);
+      delay(2000);
       digitalWrite(STATUS_LED_PIN, LOW);
     }
   }

@@ -2,9 +2,21 @@
 
 **A Hardware-Backed, Air-Gapped Credential Vault**
 
-Project Aegis is a high-security password management system that bridges the physical and digital worlds. It uses an **ESP32 microcontroller** as a physical security token ("The Key") to cryptographically unlock a secure, containerized environment ("The Vault") on your host computer.
+![Dashboard of Aegis Vault](images/dashboard%20of%20vault.png)
+*The Aegis Vault Dashboard: A modern, secure interface accessible only when your hardware key is plugged in.*
+
+---
+
+**Project Aegis** is a high-security password management system that bridges the physical and digital worlds. It uses an **ESP32 microcontroller** as a physical security token ("The Key") to cryptographically unlock a secure, containerized environment ("The Vault") on your host computer.
 
 Unlike traditional password managers that rely solely on a master password, Aegis requires **physical possession** of the programmed device to access your data. When the key is unplugged, the vault vanishes.
+
+## 📸 Hardware In Action
+
+| **Secured (Locked)** | **Unlocked (Connected)** |
+|:---:|:---:|
+| ![Disconnected](images/when%20esp32%20is%20not%20connected%20to%20vault.jpg) | ![Connected](images/when%20esp32%20is%20connected%20to%20vault.jpg) |
+| *Without the key, the vault remains inaccessible and encrypted.* | *Plug in the ESP32 to instantly decrypt and launch the Vault.* |
 
 ## 🏗️ Architecture
 
@@ -33,14 +45,21 @@ graph LR
 
 ### 1. Firmware Setup ("The Key")
 
+Since this repository protects your security, the file containing the secret key is **ignored** by Git. You must create it manually.
+
 1.  Navigate to the `firmware` directory:
     ```bash
     cd firmware
     ```
-2.  **Important:** Configure your Secret Key.
-    *   Open `src/secrets.h`.
-    *   Change the `SECRET_KEY` variable to a long, random string.
-    *   *Note: This file should ideally be excluded from version control in a real deployment.*
+2.  **Create the Secrets File:**
+    *   Create a new file named `src/secrets.h`.
+    *   Paste the following code into it:
+        ```cpp
+        #pragma once
+        // Replace the string below with your own unique secret key.
+        // You must use this EXACT key in your host/watcher.py file.
+        const char* SECRET_KEY = "CHANGE_THIS_TO_YOUR_RANDOM_SECRET_KEY";
+        ```
 3.  Connect your ESP32 via USB.
 4.  Upload the firmware:
     ```bash
@@ -49,21 +68,36 @@ graph LR
 
 ### 2. Host Setup ("The Gatekeeper")
 
-1.  Navigate to the `host` directory:
+1.  Run the automated setup script (installs dependencies & builds Docker image):
     ```bash
-    cd host
+    ./setup.sh
     ```
-2.  Install dependencies:
+2.  **Configure the Host Key:**
+    *   Open `host/watcher.py`.
+    *   Locate the `SHARED_SECRET_KEY` variable at the top of the file.
+    *   **Crucial:** Update it to match the *exact same string* you put in `firmware/src/secrets.h`.
+    ```python
+    # host/watcher.py
+    SHARED_SECRET_KEY = "CHANGE_THIS_TO_YOUR_RANDOM_SECRET_KEY".encode('utf-8')
+    ```
+
+### 3. Running the System
+
+1.  Plug in your ESP32 "Key".
+2.  Start the Watcher Daemon:
     ```bash
-    pip install -r requirements.txt
+    sudo python3 host/watcher.py
     ```
-3.  **Important:** Configure the Host Key.
-    *   Open `test_esp32.py` (or the main watcher script).
-    *   Ensure `SHARED_SECRET_KEY` matches the key you put in `firmware/src/secrets.h` **exactly**.
+3.  The Watcher will detect the key, perform the handshake, and automatically start the Vault.
+4.  Open your browser to `http://127.0.0.1:5000` to access your credentials.
+5.  **Locking:** Simply unplug the ESP32. The container will stop immediately.
+
+![CLI Output](images/cmd-output.png)
+*Real-time CLI logs showing the authentication handshake and Docker container management.*
 
 ## 🧪 Testing
 
-To verify that your ESP32 is correctly signing challenges:
+To verify that your ESP32 is correctly signing challenges (without running the full system):
 
 1.  Plug in your ESP32.
 2.  Run the test script:
@@ -82,9 +116,9 @@ To verify that your ESP32 is correctly signing challenges:
 
 - [x] **Phase 1:** Firmware HMAC-SHA256 Implementation
 - [x] **Phase 2:** Basic Host-Device Handshake Verification
-- [ ] **Phase 3:** Host "Watcher" Service (Auto-start Docker)
-- [ ] **Phase 4:** Secure Flask Web App (The Vault)
-- [ ] **Phase 5:** Database Encryption (AES-256)
+- [x] **Phase 3:** Host "Watcher" Service (Auto-start Docker)
+- [x] **Phase 4:** Secure Flask Web App (The Vault)
+- [x] **Phase 5:** Database Encryption (AES-256)
 
 ## 📄 License
 

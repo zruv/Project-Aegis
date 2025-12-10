@@ -1,0 +1,5 @@
+{
+    "idf.espIdfPath": "/home/zeus/esp/esp-idf",
+    "idf.toolsPath": "/home/zeus/.espressif",
+    "idf.pythonInstallPath": "/home/zeus/.espressif/python_env/idf6.1_py3.10_env/bin/python"
+}
