@@ -95,6 +95,16 @@ Since this repository protects your security, the file containing the secret key
 ![CLI Output](images/cmd-output.png)
 *Real-time CLI logs showing the authentication handshake and Docker container management.*
 
+## 🛡️ Active Protection
+
+The system implements a continuous **Heartbeat Mechanism**. The web interface polls the server every second to ensure the secure channel is active.
+
+**Auto-Lock Trigger:**
+If you **unplug the ESP32** or **stop the watcher script**, the Vault container is killed immediately. The web interface detects this loss of connection and instantly locks the screen with a blurred overlay, preventing any further viewing or editing of credentials.
+
+![Connection Lost Overlay](images/when%20connect%20is%20stopped%20by%20removing%20esp32%20or%20stopping%20python%20script.png)
+*The interface automatically locks and blurs when the hardware key is removed.*
+
 ## 🧪 Testing
 
 To verify that your ESP32 is correctly signing challenges (without running the full system):
@@ -119,7 +129,3 @@ To verify that your ESP32 is correctly signing challenges (without running the f
 - [x] **Phase 3:** Host "Watcher" Service (Auto-start Docker)
 - [x] **Phase 4:** Secure Flask Web App (The Vault)
 - [x] **Phase 5:** Database Encryption (AES-256)
-
-## 📄 License
-
-[MIT License](LICENSE)

@@ -80,17 +80,17 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <div class="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium flex items-center gap-2">
+            <div id="status-badge" class="px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium flex items-center gap-2 transition-colors duration-300">
                 <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  <span id="status-ping" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span id="status-dot" class="relative inline-flex rounded-full h-2 w-2 bg-green-500 transition-colors duration-300"></span>
                 </span>
-                Connected
+                <span id="status-text">Connected</span>
             </div>
         </div>
     </header>
 
-    <main class="w-full max-w-6xl">
+    <main id="main-content" class="w-full max-w-6xl transition-all duration-500">
         
         <!-- Add Credential Section -->
         <section class="mb-12 animate-slide-up">
@@ -188,8 +188,17 @@
     <!-- Footer -->
     <footer class="mt-12 text-center text-zinc-600 text-sm animate-fade-in" style="animation-delay: 200ms;">
         <p class="mb-2">Made with <span class="text-pink-500">💝</span> by zruv</p>
-        <p class="font-serif italic text-xs">"Secure as the shield of Zeus"</p>
+        <p class="font-serif italic text-xs">"Secure as the shield of Zeus" - v2.0 (Live)</p>
     </footer>
+
+    <!-- Disconnected Overlay -->
+    <div id="disconnected-overlay" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl transition-opacity duration-500 opacity-0 pointer-events-none">
+        <div class="p-8 rounded-full bg-red-500/10 border border-red-500/20 mb-6 animate-pulse">
+            <svg class="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+        </div>
+        <h2 class="text-3xl font-bold text-white mb-2">Connection Lost</h2>
+        <p class="text-zinc-400 text-center max-w-md px-4">The secure link to the Aegis Key has been broken. <br>Please reconnect your hardware token to resume.</p>
+    </div>
 
     <!-- Edit Modal -->
     <div id="editModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300">
@@ -219,6 +228,79 @@
     </div>
 
     <script>
+        // --- Heartbeat Logic ---
+        const statusBadge = document.getElementById('status-badge');
+        const statusDot = document.getElementById('status-dot');
+        const statusPing = document.getElementById('status-ping');
+        const statusText = document.getElementById('status-text');
+        const overlay = document.getElementById('disconnected-overlay');
+        const mainContent = document.getElementById('main-content');
+
+        function setDisconnected() {
+            // Badge styles
+            statusBadge.classList.remove('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+            statusBadge.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+            
+            statusDot.classList.remove('bg-green-500');
+            statusDot.classList.add('bg-red-500');
+            
+            statusPing.classList.remove('bg-green-400');
+            statusPing.classList.add('bg-red-400');
+            
+            statusText.innerText = "Disconnected";
+
+            // Overlay show
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            mainContent.style.filter = "blur(8px)";
+        }
+
+        function setConnected() {
+            // Badge styles
+            statusBadge.classList.remove('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+            statusBadge.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+            
+            statusDot.classList.remove('bg-red-500');
+            statusDot.classList.add('bg-green-500');
+            
+            statusPing.classList.remove('bg-red-400');
+            statusPing.classList.add('bg-green-400');
+            
+            statusText.innerText = "Connected";
+
+            // Overlay hide
+            overlay.classList.add('opacity-0', 'pointer-events-none');
+            mainContent.style.filter = "none";
+        }
+
+        function checkHeartbeat() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+
+            // Add timestamp to prevent caching
+            fetch('/heartbeat?t=' + Date.now(), { signal: controller.signal })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (response.ok) {
+                        setConnected();
+                    } else {
+                        console.log("Heartbeat failed: Server returned " + response.status);
+                        setDisconnected();
+                    }
+                })
+                .catch(error => {
+                    clearTimeout(timeoutId);
+                    console.log("Heartbeat error: " + error.name);
+                    setDisconnected();
+                });
+        }
+
+        // Check every 2 seconds
+        setInterval(checkHeartbeat, 2000);
+        // Initial check
+        checkHeartbeat();
+
+
+        // --- Existing UI Logic ---
         function toggleVisibility(inputId) {
             const input = document.getElementById(inputId);
             if (input.type === "password") {
@@ -253,7 +335,6 @@
             
             // Show
             modal.classList.remove('hidden');
-            // Small delay to allow display:block to apply before opacity transition
             setTimeout(() => {
                 modal.classList.remove('opacity-0');
                 content.classList.remove('scale-95');
@@ -274,7 +355,6 @@
             }, 300);
         }
         
-        // Close modal on outside click
         document.getElementById('editModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeEditModal();

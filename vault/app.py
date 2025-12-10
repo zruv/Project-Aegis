@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import os
 import sqlite3
 from cryptography.fernet import Fernet
@@ -33,6 +33,10 @@ def init_db():
 if not os.path.exists('/data'):
     os.makedirs('/data')
 init_db()
+
+@app.route('/heartbeat')
+def heartbeat():
+    return jsonify({"status": "alive"})
 
 @app.route('/')
 def index():

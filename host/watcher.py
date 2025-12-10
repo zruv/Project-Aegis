@@ -6,6 +6,7 @@ import sys
 import glob
 import docker
 import os
+import atexit
 
 # --- CONFIGURATION ---
 BAUD_RATE = 115200
@@ -17,6 +18,19 @@ DOCKER_IMAGE = "aegis-vault"
 CONTAINER_NAME = "aegis-vault-instance"
 HEARTBEAT_INTERVAL = 2 # Seconds between checks
 # ---------------------
+
+# Global client reference for atexit cleanup
+_client_ref = None
+
+def cleanup():
+    """Ensure container is stopped on exit."""
+    if _client_ref:
+        try:
+            stop_vault(_client_ref)
+        except:
+            pass
+
+atexit.register(cleanup)
 
 def list_serial_ports():
     if sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
@@ -104,6 +118,7 @@ def stop_vault(client):
         print(f"Error stopping vault: {e}")
 
 def main():
+    global _client_ref
     print("--- Aegis Watcher Started ---")
     
     client = None
@@ -138,6 +153,8 @@ def main():
         print("Ensure Docker is running. If using Docker Desktop, wait for it to initialize.")
         return
 
+    _client_ref = client
+    
     # Ensure any leftover container is gone
     stop_vault(client)
     
@@ -192,9 +209,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\nStopping Watcher...")
-        # Clean up
-        try:
-            client = docker.from_env()
-            stop_vault(client)
-        except:
-            pass
+        # Cleanup handled by atexit
