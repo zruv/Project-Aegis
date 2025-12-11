@@ -129,7 +129,3 @@ To verify that your ESP32 is correctly signing challenges (without running the f
 - [x] **Phase 3:** Host "Watcher" Service (Auto-start Docker)
 - [x] **Phase 4:** Secure Flask Web App (The Vault)
 - [x] **Phase 5:** Database Encryption (AES-256)
-
-## 📄 License
-
-[MIT License](LICENSE)
